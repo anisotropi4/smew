@@ -8,8 +8,6 @@ from itertools import accumulate
 import polars as pl
 import pyarrow as pa
 
-
-#FILEPATH = "data/CIF_ALL_FULL_DAILY_toc-full.CIF.gz"
 FILEPATH = "data/CIF_ALL_FULL_DAILY_toc-full-20260311.CIF.gz"
 
 
@@ -68,7 +66,8 @@ def get_record_line(df, key, col, column):
 
 
 def get_hd(df):
-    """get_hd:"""
+    """get_hd: col holds column width, column field names"""
+    # HD = get_record(record_id, "HD", [0, 2, 20, 6, 4, 7, 7, 1, 1, 6, 6])
     col = get_col("0,2,20,6,4,7,7,1,1,6,6")
     column = (
         """identity,Mainframe identity,Extract date,Extract time,Current reference,"""
@@ -76,13 +75,12 @@ def get_hd(df):
     ).split(",")
     update = dt.datetime.now()
     hd_data = get_record_line(df, "HD", col, column)
-    # HD = get_record4(record_id, "HD", [0, 2, 20, 6, 4, 7, 7, 1, 1, 6, 6])
     log_event(update, "HD")
     return hd_data.drop("full")
 
 
 def get_ti(df):
-    """get_ti:"""
+    """get_ti: TIPLOC record"""
     update = dt.datetime.now()
     col = get_col("0,2,7,2,6,1,26,5,4,3,16")
     column = (
@@ -95,7 +93,7 @@ def get_ti(df):
 
 
 def get_aa(df):
-    """get_aa:"""
+    """get_aa: association record"""
     update = dt.datetime.now()
     col = get_col("0,2,1,6,6,6,6,7,2,1,7,1,1,1,1,31,1")
     column = (
@@ -109,7 +107,7 @@ def get_aa(df):
 
 
 def get_cr(df):
-    """get_cr:"""
+    """get_cr: change en route record"""
     update = dt.datetime.now()
     col = get_col("0,2,7,1,2,4,4,1,8,1,3,4,3,6,1,1,1,1,4,4,4,5,8")
     column = (
@@ -123,7 +121,7 @@ def get_cr(df):
 
 
 def get_bs(df):
-    """get_bs:"""
+    """get_bs: basic schedule"""
     update = dt.datetime.now()
     col = get_col("0,2,1,6,6,6,7,1,1,2,4,4,1,8,1,3,4,3,6,1,1,1,1,4,4,1,1")
     column = (
@@ -137,7 +135,7 @@ def get_bs(df):
 
 
 def get_bx(df):
-    """get_bx:"""
+    """get_bx: extra schedule record"""
     update = dt.datetime.now()
     col = get_col("0,2,4,5,2,1,8,1")
     column = (
@@ -149,7 +147,7 @@ def get_bx(df):
 
 
 def get_lo(df):
-    """get_lo:"""
+    """get_lo: origin record"""
     update = dt.datetime.now()
     col = get_col("0,2,7,1,5,4,3,3,2,2,12,2,3")
     column = (
@@ -162,7 +160,7 @@ def get_lo(df):
 
 
 def get_li(df):
-    """get_li:"""
+    """get_li: intermediate record"""
     update = dt.datetime.now()
     col = get_col("0,2,7,1,5,5,5,4,4,3,3,3,12,2,2,2,5")
     column = (
@@ -176,7 +174,7 @@ def get_li(df):
 
 
 def get_lt(df):
-    """get_lt:"""
+    """get_lt: terminate record"""
     update = dt.datetime.now()
     col = get_col("0,2,7,1,5,4,3,3,12,3")
     column = (
@@ -188,7 +186,7 @@ def get_lt(df):
 
 
 def get_zz(df):
-    """get_zz:"""
+    """get_zz: end record"""
     update = dt.datetime.now()
     column = ["identity"]
     zz_data = get_record_line(df, "ZZ", [0, 2], column)
@@ -197,7 +195,7 @@ def get_zz(df):
 
 
 def get_basic_schedule(bs_data, bx_data):
-    """get_basic_schedule:"""
+    """get_basic_schedule: combine schedule and extra data"""
     column = (
         """index,identity,Transaction,UID,from,to,days,Power type,Timing load,Speed,Identity,"""
         """Headcode,Service code,Status,Category,STP"""
@@ -222,14 +220,12 @@ def get_basic_path(df):
         """Pathing allowance,Activity,Performance allowance,Thameslink"""
     ).split(",")
     service = li_data.filter(pl.col("Pass").str.strip_chars() != "").select(column)
-    # service = li_data.select(column).filter(li_data["Pass"].str.strip_chars() != "")
     service = service.rename({"Pass": "schedule", "Public arrival": "public schedule"})
     service = service.with_columns(pl.lit("P").alias("event"))
     column = (
         """index,identity,TIPLOC,Arrival,Public arrival,Platform,Line,Engineering allowance,"""
         """Pathing allowance,Activity,Performance allowance,Thameslink"""
     ).split(",")
-    # arrive = li_data.select(column).filter(li_data["Pass"].str.strip_chars() == "")
     arrive = li_data.filter(pl.col("Pass").str.strip_chars() == "").select(column)
     arrive = arrive.rename({"Arrival": "schedule", "Public arrival": "public schedule"})
     arrive = arrive.with_columns(pl.lit("A").alias("event"))
@@ -237,7 +233,6 @@ def get_basic_path(df):
         """index,identity,TIPLOC,Departure,Public departure,Platform,Line,Engineering allowance,"""
         """Pathing allowance,Activity,Performance allowance,Thameslink"""
     ).split(",")
-    # depart = li_data.select(column).filter(li_data["Pass"].str.strip_chars() == "")
     depart = li_data.filter(pl.col("Pass").str.strip_chars() == "").select(column)
     depart = depart.rename(
         {"Departure": "schedule", "Public departure": "public schedule"}
@@ -286,13 +281,13 @@ def main():
     hd = get_hd(df).collect()
     hd_date = str(dt.date.strptime(hd["Start"][0], "%d%m%y"))
     print(f"HD{" "*6}{hd_date}")
+    aa_data = get_aa(df)
+    aa_data.sink_ipc("output/aa_data.arrow", compression="zstd")
+    log_event(update)
     bs_data = get_bs(df)
     bx_data = get_bx(df)
     basic_schedule = get_basic_schedule(bs_data, bx_data)
     basic_schedule.sink_ipc("output/bs_data.arrow", compression="zstd")
-    # lo_data = get_lo(df)
-    # li_data = get_li(df)
-    # lt_data = get_lt(df)
     base_path = get_basic_path(df)
     cr_data = get_cr(df)
     column = (
@@ -306,14 +301,11 @@ def main():
     )
     ti_data = get_ti(df)
     ti_data.sink_ipc("output/ti_data.arrow", compression="zstd")
-    log_event(update)
     path = path.join(ti_data.select(["TIPLOC", "CRS"]), on="TIPLOC")
     log_event(update, "TT")
     update = dt.datetime.now()
     path.sink_ipc("output/wtt-path.arrow", compression="zstd")
     log_event(update, "WTT")
-    # batch_ipc(path, "update/wtt-path2.arrow")
-    # log_event(update, "---")
 
 
 if __name__ == "__main__":
