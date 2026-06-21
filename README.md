@@ -73,3 +73,6 @@ Change the value of the `START_DATE` parameter in the `wtt-process.py` script to
 ```
 START_DATE = "2026-03-06"
 ```
+## Attribution
+
+The published CIF timetable data is a point-in-time copy of the Network Rail Schedule (NWR Schedule) CIF file from the [Rail Data Marketplace (RDM)](https://raildata.org.uk/dataProduct/P-dbd92416-2f09-4f72-ad42-d53bbfec50f3/overview), licensed under the [Open Government (OGL3) license](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
