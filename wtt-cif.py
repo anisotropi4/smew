@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """wtt-cif: convert GB CIF file to arrow files"""
 
+import argparse
 import datetime as dt
 import lzma
 import os
@@ -8,8 +9,6 @@ from itertools import accumulate
 
 import polars as pl
 import pyarrow as pa
-
-FILEPATH = "data/CIF_ALL_FULL_DAILY_toc-full-20260311.CIF.gz"
 
 
 def log_event(update, key="", start=dt.datetime.now()):
@@ -21,12 +20,12 @@ def log_event(update, key="", start=dt.datetime.now()):
     print(f"{now - start} {now - update}")
 
 
-def get_cif():
+def get_cif(filepath):
     """get_cif: return CIF data if xz compressed or otherwise"""
-    if FILEPATH[-3:] == ".xz":
-        with lzma.open(FILEPATH, "rb") as fin:
+    if filepath[-3:] == ".xz":
+        with lzma.open(filepath, "rb") as fin:
             return read_cif(fin)
-    with open(FILEPATH, "rb") as fin:
+    with open(filepath, "rb") as fin:
         return read_cif(fin)
 
 
@@ -275,10 +274,10 @@ def batch_ipc(lf, outpath, chunk=1_024):
             writer.close()
 
 
-def main():
+def main(filepath):
     """main:"""
     update = dt.datetime.now()
-    df = get_cif()
+    df = get_cif(filepath)
     if not os.path.exists("output"):
         os.makedirs("output")
     hd = get_hd(df).collect()
@@ -312,4 +311,15 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="create convert GB CIF file to arrow files"
+    )
+    parser.add_argument(
+        "filepath",
+        type=str,
+        help="path to CIF file",
+        nargs="?",
+        default="data/CIF_ALL_FULL_DAILY_toc-full-20260311.CIF.gz",
+    )
+    args = parser.parse_args()
+    main(args.filepath)

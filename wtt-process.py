@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """wtt-process: generate a week of timetable paths"""
 
+import argparse
 import datetime as dt
 
 import numpy as np
@@ -8,8 +9,7 @@ import polars as pl
 
 # START_DATE = "2025-06-08"
 # START_DATE = "2025-08-04"
-START_DATE = "2026-03-06"
-
+# START_DATE = "2026-03-06"
 
 def _pp(df):
     """pp: pretty print polar frame for debug"""
@@ -168,7 +168,7 @@ def get_wtt_week(start_date, calendar, path):
     return s
 
 
-def main():
+def main(start_date):
     """main: core execution function"""
     update = dt.datetime.now()
     path = get_path()
@@ -177,9 +177,21 @@ def main():
     calendar = get_calendar(path)
     log_event(update)
     update = dt.datetime.now()
-    _ = get_wtt_week(START_DATE, calendar, path)
+    _ = get_wtt_week(start_date, calendar, path)
     log_event(update)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(
+        description="generate a week of timetable paths"
+    )
+    default = "2026-03-06"
+    parser.add_argument(
+        "startdate",
+        type=str,
+        help=f"first day of week to process (default {default})",
+        nargs="?",
+        default=default,
+    )
+    args = parser.parse_args()
+    main(args.startdate)
