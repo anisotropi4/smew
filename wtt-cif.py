@@ -6,6 +6,7 @@ import datetime as dt
 import lzma
 import os
 from itertools import accumulate
+from pathlib import Path
 
 import polars as pl
 import pyarrow as pa
@@ -283,6 +284,7 @@ def main(filepath):
     hd = get_hd(df).collect()
     hd_date = str(dt.date.strptime(hd["Start"][0], "%d%m%y"))
     print(f"HD{" "*6}{hd_date}")
+    Path("output").mkdir(exist_ok=True)
     aa_data = get_aa(df)
     aa_data.sink_ipc("output/aa_data.arrow", compression="zstd")
     log_event(update)
