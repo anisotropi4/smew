@@ -3,6 +3,7 @@
 
 import datetime as dt
 import lzma
+import os
 from itertools import accumulate
 
 import polars as pl
@@ -278,6 +279,8 @@ def main():
     """main:"""
     update = dt.datetime.now()
     df = get_cif()
+    if not os.path.exists("output"):
+        os.makedirs("output")
     hd = get_hd(df).collect()
     hd_date = str(dt.date.strptime(hd["Start"][0], "%d%m%y"))
     print(f"HD{" "*6}{hd_date}")
