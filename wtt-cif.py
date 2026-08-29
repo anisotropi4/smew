@@ -284,12 +284,12 @@ def main(filepath):
     hd_date = str(dt.date.strptime(hd["Start"][0], "%d%m%y"))
     print(f"HD{" "*6}{hd_date}")
     aa_data = get_aa(df)
-    aa_data.sink_ipc("output/aa_data.arrow", compression="zstd")
+    aa_data.sink_ipc(f"output/aa_data-{hd_date}.arrow", compression="zstd")
     log_event(update)
     bs_data = get_bs(df)
     bx_data = get_bx(df)
     basic_schedule = get_basic_schedule(bs_data, bx_data)
-    basic_schedule.sink_ipc("output/bs_data.arrow", compression="zstd")
+    basic_schedule.sink_ipc(f"output/bs_data-{hd_date}.arrow", compression="zstd")
     base_path = get_basic_path(df)
     cr_data = get_cr(df)
     column = (
@@ -302,11 +302,11 @@ def main(filepath):
         ["Thameslink", "ix"]
     )
     ti_data = get_ti(df)
-    ti_data.sink_ipc("output/ti_data.arrow", compression="zstd")
+    ti_data.sink_ipc(f"output/ti_data-{hd_date}.arrow", compression="zstd")
     path = path.join(ti_data.select(["TIPLOC", "CRS"]), on="TIPLOC")
     log_event(update, "TT")
     update = dt.datetime.now()
-    path.sink_ipc("output/wtt-path.arrow", compression="zstd")
+    path.sink_ipc(f"output/wtt-path-{hd_date}.arrow", compression="zstd")
     log_event(update, "WTT")
 
 
@@ -319,7 +319,7 @@ if __name__ == "__main__":
         type=str,
         help="path to CIF file",
         nargs="?",
-        default="data/CIF_ALL_FULL_DAILY_toc-full-20260311.CIF.gz",
+        default="data/CIF_ALL_FULL_DAILY_toc-full-20260509.CIF.gz",
     )
     args = parser.parse_args()
     main(args.filepath)

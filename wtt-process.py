@@ -61,9 +61,9 @@ def get_wtt(date, calendar, path, path_filter=True):
     return r
 
 
-def get_path():
+def get_path(wtt_path):
     """get_path:"""
-    r = pl.scan_ipc("output/wtt-path.arrow", memory_map=False)
+    r = pl.scan_ipc(wtt_path, memory_map=False)
     r = r.sort("index").with_row_index(name="ix")
     duration = get_duration(r)
     column = ["ix", "duration", "schedule_dt"]
@@ -132,7 +132,7 @@ def get_calendar(df):
     r = s.select(column).unique(column[1:]).sort("path")
     r = r.with_columns(
         date=pl.date_ranges("start", "end", interval="1d", closed="left")
-    ).explode("date")
+    ).explode("date", empty_as_null=True)
     r = (
         r.with_columns(
             days_bitmap=pl.col("days").str.to_integer(base=2),
@@ -168,10 +168,10 @@ def get_wtt_week(start_date, calendar, path):
     return s
 
 
-def main(start_date):
+def main(start_date, wtt_path):
     """main: core execution function"""
     update = dt.datetime.now()
-    path = get_path()
+    path = get_path(wtt_path)
     log_event(update)
     update = dt.datetime.now()
     calendar = get_calendar(path)
@@ -185,13 +185,20 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="generate a week of timetable paths"
     )
-    default = "2026-03-06"
+    DEFAULT = "2026-05-11"
     parser.add_argument(
         "startdate",
         type=str,
-        help=f"first day of week to process (default {default})",
+        help=f"first day of week to process (default {DEFAULT})",
         nargs="?",
-        default=default,
+        default=DEFAULT,
+    )
+    parser.add_argument(
+        "wtt_path",
+        type=str,
+        help="path to WTT arrow file",
+        nargs="?",
+        default="output/wtt-path-2026-05-08.arrow",
     )
     args = parser.parse_args()
-    main(args.startdate)
+    main(args.startdate, args.wtt_path)
