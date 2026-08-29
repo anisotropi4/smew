@@ -1,3 +1,6 @@
+geopandas
+matplotlib
 polars
 pyarrow
-numpy
+imageio
+imageio-ffmpeg

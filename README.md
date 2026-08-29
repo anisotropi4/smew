@@ -7,7 +7,18 @@ This implementation uses
 * [`python geopandas`](https://geopandas.org/) to render the arrow file in the `output/wtt-path.arrow` into a geospatial representation that can be drawn using [`matplotlib`](https://matplotlib.org/). 
 * [`python imageio`](https://pypi.org/project/ImageIO/) to render animagted geospatial frames.
 
-## Configuration
+
+## Create a timetable point animation
+
+To create a timetable point visualization, run the script:
+
+```
+    $ ./run.sh
+```
+
+This create to create a `gif` and `mp4` animation in the `image` directory.
+
+### Environment
 
 These scripts require a working [`python3`](https://www.python.org/) and tested using a virtual environment is used to manage dependencies with [`uv`](https://docs.astral.sh/uv/). As follows:
 
@@ -19,7 +30,7 @@ $ source venv/bin/activate
 
 The `mp4` animation requires `ffmpeg` to be installed.
 
-## Convert CIF to arrow
+### Convert CIF to arrow
 
 The `wtt-cif.py` script convert the CIF file in the `data` directory and output a series of arrow files in `output`.
 
@@ -73,7 +84,7 @@ $ ./wtt-process.py
 0:00:41.534245 0:00:41.531730
 ```
 
-## Generate a working timetable point visualization
+## Generate a working timetable point animation
 The `wtt-point-visualize.py` script convert the `timetable-<yyyy-mm-dd>.arrow` files in the `output` directory and output an animated service-count `gif` and `mp4` for TIPLOC point location in the `images` directory agregated in 10 minute slices at six frames-per-second .
 
 ```
