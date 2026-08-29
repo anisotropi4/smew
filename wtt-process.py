@@ -11,6 +11,7 @@ import polars as pl
 # START_DATE = "2025-08-04"
 # START_DATE = "2026-03-06"
 
+
 def _pp(df):
     """pp: pretty print polar frame for debug"""
     with pl.Config(set_tbl_cols=-1, set_tbl_hide_dataframe_shape=True):
@@ -182,9 +183,7 @@ def main(start_date, wtt_path):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="generate a week of timetable paths"
-    )
+    parser = argparse.ArgumentParser(description="generate a week of timetable paths")
     DEFAULT = "2026-05-11"
     parser.add_argument(
         "startdate",

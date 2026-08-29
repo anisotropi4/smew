@@ -56,7 +56,7 @@ def animate_frame(gf, key, bbox, title=True, font_size=4):
     point = (gf["geometry"].type == "Point").all()
     if not (line or point):
         print("error: no geometry")
-        return np.stat(frame)
+        return None
     for k, v in gf.groupby(key):
         print(k, end=" ")
         fig, ax = plt.subplots(dpi=300.0, layout="constrained")
@@ -87,7 +87,7 @@ def main():
     end_date = start_date + dt.timedelta(weeks=4)
     service = "passenger"
     fps = 6.0
-        
+
     timetable = pl.scan_ipc("output/timetable-2026-0*.arrow")
     column = (
         """identity,UID,Power type,Timing load,Speed,Identity,Service code,Category,STP,ATOC,"""
@@ -99,45 +99,42 @@ def main():
     timetable = timetable.filter(
         (pl.col("date") >= start_date) & (pl.col("date") < end_date)
     )
-
-    r = (
+    df = (
         timetable.select(column)
         .sort(["departure", "UID", "duration"])
         .unique(["UID", "date", "duration"], keep="first", maintain_order=True)
-    )
-    r = r.with_columns(date_dt=(pl.col("date").dt.combine(pl.col("schedule_t"))))
-    s = r.with_columns(bucket_10m=pl.col("date_dt").dt.truncate("10m"))
-    s = s.with_columns(bucket_h=pl.col("date_dt").dt.truncate("60m"))
-    s = (
-        s.group_by(["bucket_10m", "TIPLOC", "is_freight"])
+        .with_columns(date_dt=(pl.col("date").dt.combine(pl.col("schedule_t"))))
+        .with_columns(bucket_10m=pl.col("date_dt").dt.truncate("10m"))
+        .group_by(["bucket_10m", "TIPLOC", "is_freight"])
         .len("count")
         .sort(["bucket_10m", "TIPLOC"])
     )
-    df = s.collect().to_pandas()
+    df = df.collect().to_pandas()
     if df.empty:
         print("ERROR: empty dataframe", file=sys.stderr)
-        exit(1)
+        sys.exit(1)
     tiploc_location = get_tiploc_location()
     tiploc_location = (
         tiploc_location[["TIPLOC", "geometry"]].set_index("TIPLOC").squeeze()
     )
     df = df.join(tiploc_location, on="TIPLOC")
-    gf = gp.GeoDataFrame(df)
-
-    if service == "passenger":
-        gf = gf.loc[~gf["is_freight"]]
-    if service == "freight":
-        gf = gf.loc[gf["is_freight"]]
-
-    bbox = gp.GeoSeries(box(*gf.total_bounds))
-    frame = animate_frame(gf, "bucket_10m", bbox, title=True)
-    key = str(10).zfill(2)
-    speed = str(int(fps)).zfill(2)
-    outstub = f"image/{start_date.date()}-{key}-{service}-{speed}"
     if not os.path.isdir("image"):
         os.mkdir("image")
-    mimwrite(f"{outstub}.gif", frame, fps=fps, loop=0)
-    imwrite(f"{outstub}.mp4", frame, fps=fps)
+    for service, is_freight in [
+        ("passenger", False),
+        ("freight", True),
+    ]:
+        print(service)
+        gf = gp.GeoDataFrame(df)
+        gf = gf[gf["is_freight"] == is_freight].dropna()
+        bbox = gp.GeoSeries(box(*gf.total_bounds))
+        frame = animate_frame(gf, "bucket_10m", bbox, title=True)
+        key = str(10).zfill(2)
+        speed = str(int(fps)).zfill(2)
+        outstub = f"image/{start_date.date()}-{key}-{service}-{speed}"
+        mimwrite(f"{outstub}.gif", frame, fps=fps, loop=0)
+        imwrite(f"{outstub}.mp4", frame, fps=fps)
+
 
 if __name__ == "__main__":
     main()
